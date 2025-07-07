@@ -73,6 +73,23 @@ $queryPelanggan = mysqli_query($conn, "
     WHERE pelanggan.tanggal = CURDATE() AND pelanggan.status != 'Selesai'
     ORDER BY pelanggan.id DESC
 ");
+
+$queryPelangganSelesai = mysqli_query($conn, "
+    SELECT 
+        pelanggan.id,
+        pelanggan.plat_nomor,
+        pelanggan.warna,
+        pelanggan.harga,
+        pelanggan.harga_tambahan,
+        pelanggan.status,
+        jenis_mobil.merk,
+        karyawan.nama AS nama_karyawan
+    FROM pelanggan
+    JOIN jenis_mobil ON pelanggan.id_jenis_mobil = jenis_mobil.id
+    JOIN karyawan ON pelanggan.carwasher = karyawan.id
+    WHERE pelanggan.tanggal = CURDATE() AND pelanggan.status = 'Selesai'
+    ORDER BY pelanggan.id DESC
+");
 ?>
 
 <!DOCTYPE html>
@@ -265,7 +282,7 @@ $queryPelanggan = mysqli_query($conn, "
                                 <input type="hidden" name="update_status" value="1">
                                 <select name="status" class="form-select statusSelect" onchange="this.form.submit()">
                                     <?php
-                                    $statuses = ['pending', 'Dicuci', 'selesai'];
+                                    $statuses = ['menunggu', 'Dicuci', 'selesai'];
                                     foreach ($statuses as $st) {
                                         $sel = ($p['status'] == $st) ? 'selected' : '';
                                         echo "<option value='$st' $sel>" . ucfirst($st) . "</option>";
@@ -286,6 +303,64 @@ $queryPelanggan = mysqli_query($conn, "
                 </tbody>
             </table>
         </div>
+                    <!-- Tabel Data Pelanggan (status != selesai) -->
+            <table data-toggle="table" data-search="true" data-pagination="true" class="table table-striped mt-5">
+                <thead>
+                    <tr>
+                        <th>No</th>
+                        <th>Plat Nomor</th>
+                        <th>Warna</th>
+                        <th>Merk Mobil</th>
+                        <th>Harga</th>
+                        <th>Harga Tambahan</th>
+                        <th>Total Harga</th>
+                        <th>Petugas</th>
+                        <th>Status</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php
+                    $no = 1;
+                    while ($p = mysqli_fetch_assoc($queryPelangganSelesai)) {
+                        $totalHarga = $p['harga'] + $p['harga_tambahan'];
+                        ?>
+                        <tr>
+                            <td><?= $no++ ?></td>
+                            <td><?= htmlspecialchars($p['plat_nomor']) ?></td>
+                            <td><?= htmlspecialchars($p['warna']) ?></td>
+                            <td><?= htmlspecialchars($p['merk']) ?></td>
+                            <td>Rp <?= number_format($p['harga'], 0, ',', '.') ?></td>
+                            <td>Rp <?= number_format($p['harga_tambahan'], 0, ',', '.') ?></td>
+                            <td>Rp <?= number_format($totalHarga, 0, ',', '.') ?></td>
+                            <td><?= htmlspecialchars($p['nama_karyawan']) ?></td>
+                            <td>
+                           <form method="POST" class="statusForm">
+                                <input type="hidden" name="id_pelanggan" value="<?= $p['id'] ?>">
+                                <input type="hidden" name="update_status" value="1">
+                                <select name="status" class="form-select statusSelect" onchange="this.form.submit()">
+                                    <?php
+                                    $statuses = ['selesai', 'Dicuci', 'menunggu'];
+                                    foreach ($statuses as $st) {
+                                        $sel = ($p['status'] == $st) ? 'selected' : '';
+                                        echo "<option value='$st' $sel>" . ucfirst($st) . "</option>";
+                                    }
+                                    ?>
+                                </select>
+                            </form>
+
+
+                            </td>
+                            <td>
+                                <form method="POST" class="deleteForm">
+                                    <input type="hidden" name="delete_id" value="<?= $p['id'] ?>">
+                                    <button type="button" class="btn btn-danger btn-sm btn-delete"><i class="fa-solid fa-trash"></i></button>
+                                </form>
+                            </td>
+                        </tr>
+                    <?php } ?>
+                </tbody>
+            </table>
     </div>
 </div>
 
